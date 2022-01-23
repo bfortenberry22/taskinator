@@ -66,22 +66,38 @@ var createTaskEl = function(taskDataObj){
     var taskActionsEl = createTaskActions (taskIdCounter);
     listItemEl.appendChild(taskActionsEl);
 
+    switch (taskDataObj.status) {
+        case "to do":
+          taskActionsEl.querySelector("select[name='status-change']").selectedIndex = 0;
+          tasksToDoEl.append(listItemEl);
+          break;
+        case "in progress":
+          taskActionsEl.querySelector("select[name='status-change']").selectedIndex = 1;
+          tasksInProgressEl.append(listItemEl);
+          break;
+        case "completed":
+          taskActionsEl.querySelector("select[name='status-change']").selectedIndex = 2;
+          tasksCompletedEl.append(listItemEl);
+          break;
+        default:
+          console.log("Something went wrong!");
+      }
+
     //add entire list item to list
-    tasksToDoEl.appendChild(listItemEl);//attachs the item to the bottom of the list, taskToDoEl is defined at the top of JS
+    //tasksToDoEl.appendChild(listItemEl);//attachs the item to the bottom of the list, taskToDoEl is defined at the top of JS
     
     //adds the id to end of the objecttaskDataObj
     taskDataObj.id= taskIdCounter;
     //pushed the task to the end of the array
     tasks.push(taskDataObj);
-    
-
-    saveTasks();
 
     //increment counter by 1
     taskIdCounter++;
-
+    
     console.log(taskDataObj);
     console.log(taskDataObj.status);
+
+    saveTasks();
 };
 
 //create task actions for each added task
@@ -227,6 +243,9 @@ var taskStatusChangeHandler = function(event){
         }
     }
 
+    //save to local storage
+    saveTasks();
+
 };
 
 //delete task function
@@ -254,7 +273,25 @@ var deleteTask =function(taskId){
 //function to save the task to local storage anytime something changes
 var saveTasks= function(){
     localStorage.setItem("tasks", JSON.stringify(tasks));
-}
+};
+
+var loadTasks = function(){
+    var savedTasks = localStorage.getItem("tasks");
+
+    if(!savedTasks){
+        return false;
+    }
+
+    //else load up saved task
+    console.log("Saved tasks found!");
+    savedTasks=JSON.parse(savedTasks);
+
+    //loop through the savedTask array
+    for(var i = 0; i < savedTasks.length; i++){
+        //pass each task object into the 'createTaskEl()' function
+        createTaskEl(savedTasks[i]);
+    }
+};
 
 //this is the eventListener to create task
 formEl.addEventListener("submit", taskFormHandler);
@@ -265,3 +302,4 @@ pageContentEl.addEventListener("click", taskButtonHandler);
 //status change eventListerer
 pageContentEl.addEventListener("change", taskStatusChangeHandler);
 
+loadTasks();
