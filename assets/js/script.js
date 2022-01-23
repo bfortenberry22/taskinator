@@ -3,6 +3,8 @@ var formEl = document.querySelector("#task-form"); //this is the form, for the e
 var tasksToDoEl = document.querySelector("#tasks-to-do");//this
 var taskIdCounter = 0;
 var pageContentEl = document.querySelector("#page-content");
+var tasksInProgressEl = document.querySelector("#tasks-in-progress");
+var tasksCompletedEl = document.querySelector("#tasks-completed");
 
 //create a functin to capture and display the task
 var taskFormHandler = function (event){
@@ -19,14 +21,23 @@ var taskFormHandler = function (event){
     //reset the input form for the user
     formEl.reset();
 
-    //package the data up as an object
-    var taskDataObj = {
-        name: taskNameInput, 
-        type: taskTypeInput
-    };
+    var isEdit = formEl.hasAttribute("data-task-id");
 
-    //send it as an argument to createTaskEl
-    createTaskEl(taskDataObj);
+    //has data attribute, so get task id and call function to complete edit process
+    if(isEdit){
+        var taskId = formEl.getAttribute("data-task-id");
+        completeEditTask(taskNameInput, taskTypeInput, taskId)
+    }
+    //no data attribute, so create object as normal and pass to createTaskEl function
+    else{
+        //package up as an object
+        var taskDataObj = {
+            name: taskNameInput,
+            type: taskTypeInput
+        }
+        //send it as an argument to createTaskEl
+         createTaskEl(taskDataObj);
+    };
 }
     
 
@@ -110,14 +121,56 @@ formEl.addEventListener("submit", taskFormHandler);
 
 //add functionality to the buttons in each task
 var taskButtonHandler = function(event){
-    console.log(event.target);
+    //get target element from event
+    var targetEl = event.target
 
-    //delete button
-    if (event.target.matches(".delete-btn")){
+    //edit button was clicked
+    if(targetEl.matches(".edit-btn")){
+        var taskId = targetEl.getAttribute("data-task-id");
+        editTask(taskId);
+    }
+    //delete button was clicked
+    else if (event.target.matches(".delete-btn")){
         //get the element's task id
         var taskId = event.target.getAttribute("data-task-id");
         deleteTask(taskId);
     }
+};
+
+//edit task function
+var editTask = function(taskId){
+    
+    //get task list item element
+    var taskSelected = document.querySelector(".task-item[data-task-id='" + taskId +"']");
+
+    //get content from task name and type
+    var taskName = taskSelected.querySelector("h3.task-name").textContent;
+    var taskType = taskSelected.querySelector("span.task-type").textContent;
+
+    //place content from the task in the form 
+    document.querySelector("input[name='task-name']").value = taskName;
+    document.querySelector("select[name='task-type']").value = taskType;
+    
+    //changes the "Add Task" button to a 'Save Task" button
+    document.querySelector("#save-task").textContent = "Save Task";
+
+    formEl.setAttribute("data-task-id", taskId);
+};
+
+//complete the edit
+var completeEditTask = function (taskName, taskType, taskId){
+    //find the matching task list item
+    var taskSelected = document.querySelector(".task-item[data-task-id='" + taskId + "']");
+
+    // set new values
+    taskSelected.querySelector("h3.task-name").textContent = taskName;
+    taskSelected.querySelector("span.task-type").textContent = taskType;
+
+    alert("Task Updated!");
+
+    formEl.removeAttribute("data-task-id");
+    document.querySelector("#save-task").textContent = "Add Task";
+
 };
 
 //delete task function
@@ -126,6 +179,34 @@ var deleteTask =function(taskId){
     taskSelected.remove();
 };
 
+//status change handler
+var taskStatusChangeHandler = function(event){
+    console.log(event.target.value);
+
+    //get the task item's id
+    var taskId = event.target.getAttribute("data-task-id");
+
+    //find the parent task item element based on the id
+    var taskSelected = document.querySelector(".task-item[data-task-id='" + taskId + "']");
+    
+    //get the currently selected option's value and convert to lower case
+    var statusValue = event.target.value.toLowerCase();
+
+    //move the task to the appropriate box
+    if (statusValue === "to do") {
+        tasksToDoEl.appendChild(taskSelected);
+    } 
+    else if (statusValue === "in progress") {
+        tasksInProgressEl.appendChild(taskSelected);
+    } 
+    else if (statusValue === "completed") {
+        tasksCompletedEl.appendChild(taskSelected);
+    }
+};
+
 //eventListener for the buttons on individual tasks
 pageContentEl.addEventListener("click", taskButtonHandler);
+
+//status change eventListerer
+pageContentEl.addEventListener("change", taskStatusChangeHandler);
 
